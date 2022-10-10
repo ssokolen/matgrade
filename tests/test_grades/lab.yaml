@@ -1,0 +1,46 @@
+solution: decay_time.m
+submissions: submissions
+
+checks:
+  
+  shape:
+    sodium_shape: ["1.0", "[0.2, 0.8]"]
+    iron_shape: ["1.0", "0.2"]
+
+  value:
+    iron: [["26", "0.5"], 0.001]
+    bonus: [["'Fe'", "0.5"], 0.001]
+  
+  error:
+    id_error: ["0.0", "0.0"]
+
+---
+
+checks: name
+grade: 10
+
+---
+
+checks: sodium_shape
+grade: 10
+
+---
+
+checks: iron_shape
+grade: 10
+
+
+---
+
+checks: iron 
+grade: 10
+
+---
+
+checks: id_error
+grade: 10
+
+---
+
+checks: bonus 
+grade: 10

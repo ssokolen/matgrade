@@ -1,0 +1,23 @@
+[project]
+name = "matgrade"
+version = "0.0.1"
+authors = [
+  { name="Stanislav Sokolenko", email="stanislav@sokolenko.net" },
+]
+description = "A package for automatically grading MATLAB assignment functions."
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "pyyaml",
+    "pandas",
+    "matlabengine",
+]
+
+[project.scripts]
+matgrade = "matgrade:matgrade"
