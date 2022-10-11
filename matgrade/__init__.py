@@ -70,3 +70,6 @@ def matgrade():
     filename = filename.split(".")
     filename = filename[0] + ".csv"
     assessment.tabulate(filename)
+
+    if len(sys.argv) > 2:
+        assessment.check_plagiarism(sys.argv[2])

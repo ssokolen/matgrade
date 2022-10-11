@@ -1,4 +1,4 @@
-% Student: ceffcd8b1b2d0c4031609c9191ffaa4655e034faeec0924102fd94cee746540c
+% Student: ceffc
 
 function t = decay_time(n,x)
 

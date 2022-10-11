@@ -97,8 +97,9 @@ class ErrorCheck:
             # And then check to see if there was an error defined there
             lines = code.split("\n")
 
-            # Line numbering starts at 1
-            lines = [i+1 for i, l in enumerate(lines) if "error(" in l]
+            # Line numbering starts at 1 and hash line is added after code is stored
+            # (resulting in a total offset of +2)
+            lines = [i+2 for i, l in enumerate(lines) if "error(" in l]
 
             if line in lines:
                 return True

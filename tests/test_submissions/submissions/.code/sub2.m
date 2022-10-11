@@ -1,4 +1,4 @@
-% Student: a07d8b11a6b1229e3e48fb7ef72c153b6864690c0930d773df776e02b450c465
+% Student: a07d8
 
 function t = decay_time(n,x)
 

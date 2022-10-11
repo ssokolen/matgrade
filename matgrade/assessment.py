@@ -3,6 +3,7 @@ import matlab.engine
 import os
 import pandas as pd
 import re
+import socket
 import shutil
 import time
 import warnings
@@ -102,14 +103,31 @@ class Assessment:
             # Remove all comments to facilitate plagiarism submission checking 
             submission = re_comment.sub("", submission)
 
-            # And add in student hash
-            h = hashlib.sha256(student.encode("utf-8")).hexdigest()
-            submission = "% Student: {}\n{}".format(h, submission)
+            # And add in student hash as an id
+            student_id = hashlib.sha256(student.encode("utf-8")).hexdigest()
 
-            self.hashes[student] = h
+            self.hashes[student] = student_id
             self.submissions[student] = submission
             self.timestamps[student] = timestamp
             self.functions[student] = function
+
+        # Ensure that there is at least on formattes submission
+        if len(self.submissions) == 0:
+            msg = "No valid submissions found."
+            raise AssessmentError({"message": msg.format(submission)})
+
+        # Trim hashes to keep things readable (but unique)
+        ids = [i for i in self.hashes.values()]
+
+        for n in range(5, len(ids[0])):
+            trimmed = [i[:n] for i in ids]
+            
+            if len(set(trimmed)) == len(trimmed):
+
+                for s, i in list(self.hashes.items()):
+                    self.hashes[s] = i[:n]
+
+                break
 
         # Generate m files for MATLAB code
         self.path = os.path.abspath(os.path.join(submissions, ".code"))
@@ -127,7 +145,9 @@ class Assessment:
 
             f = open(os.path.join(self.path, call + ".m"), "w")
             with f:
-                f.write(self.submissions[s])
+                student_id = self.hashes[s]
+                submission = self.submissions[s]
+                f.write("% Student: {}\n{}".format(student_id, submission))
 
             self.calls[s] = call 
 
@@ -235,4 +255,53 @@ class Assessment:
         d = pd.DataFrame(data = content)
         d.to_csv(name, index = False)
 
+    #---------------------------------------------------------------------------
+    # Check plagiarism via moss
 
+    def check_plagiarism(self, user_id):
+
+        s = socket.socket()
+        s.connect(('moss.stanford.edu', 7690))
+
+        s.send("moss {}\n".format(user_id).encode())
+        s.send("directory 0\n".encode())
+        s.send("X 0\n".encode())
+        s.send("maxmatches 10\n".encode())
+        s.send("show 100\n".encode())
+        s.send("language matlab\n".encode())
+
+        recv = s.recv(1024)
+        print(recv)
+        print(recv.decode())
+        if recv == "no":
+            s.send(b"end\n")
+            s.close()
+
+            msg = "Something went wrong with MOSS submission."
+            raise AssessmentError({"message": msg.format(arguments)})
+
+        for i, (student, submission) in enumerate(self.submissions.items()):
+            
+            submission = submission.encode()
+
+            message = "file {0} {1} {2} {3}\n".format(
+                i + 1,
+                "matlab",
+                len(submission),
+                self.hashes[student]
+            )
+
+            print(self.calls[student])
+            print(message)
+            s.send(message.encode())
+            s.send(submission)
+
+        s.send("query 0 \n".encode())
+
+        response = s.recv(1024)
+        print(response)
+
+        s.send(b"end\n")
+        s.close()
+
+        print(response.decode())
