@@ -29,7 +29,16 @@ The installation process should provide access to the `matgrade` binary file whi
 matgrade assessment.yaml
 ```
 
-Which will then produce `assessment.csv` output.
+Which will then produce `grades.csv` output.
+
+Submitted assessments can be automatically assessed for plagiarism by providing a valid MOSS id (https://theory.stanford.edu/~aiken/moss/).
+
+The following will produce `grades.csv` as well as `plagiarism_report.html`:
+
+```
+matgrade assessment.yaml -m xxxxxxxxx
+```
+
 
 ## Configuration
 

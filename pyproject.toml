@@ -14,9 +14,10 @@ classifiers = [
 ]
 
 dependencies = [
-    "pyyaml",
-    "pandas",
     "matlabengine",
+    "pandas",
+    "pyyaml",
+    "requests"
 ]
 
 [project.scripts]

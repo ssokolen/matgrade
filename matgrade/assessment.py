@@ -3,6 +3,7 @@ import matlab.engine
 import os
 import pandas as pd
 import re
+import requests
 import socket
 import shutil
 import time
@@ -242,7 +243,7 @@ class Assessment:
     #---------------------------------------------------------------------------
     # Generate results of all grades
 
-    def tabulate(self, name):
+    def tabulate(self, filename):
 
         # Converting grade content into lists
         students = self.submissions.keys()
@@ -253,12 +254,12 @@ class Assessment:
             content[check] = [grades[s] for s in students]
 
         d = pd.DataFrame(data = content)
-        d.to_csv(name, index = False)
+        d.to_csv(filename, index = False)
 
     #---------------------------------------------------------------------------
     # Check plagiarism via moss
 
-    def check_plagiarism(self, user_id):
+    def check_plagiarism(self, user_id, filename):
 
         s = socket.socket()
         s.connect(('moss.stanford.edu', 7690))
@@ -270,10 +271,8 @@ class Assessment:
         s.send("show 100\n".encode())
         s.send("language matlab\n".encode())
 
-        recv = s.recv(1024)
-        print(recv)
-        print(recv.decode())
-        if recv == "no":
+        response = s.recv(1024)
+        if response == "no":
             s.send(b"end\n")
             s.close()
 
@@ -291,17 +290,38 @@ class Assessment:
                 self.hashes[student]
             )
 
-            print(self.calls[student])
-            print(message)
             s.send(message.encode())
             s.send(submission)
 
         s.send("query 0 \n".encode())
 
         response = s.recv(1024)
-        print(response)
 
         s.send(b"end\n")
         s.close()
 
-        print(response.decode())
+        response = response.decode().strip()
+
+        if response == "":
+            msg = "Something went wrong with MOSS submission (check id)."
+            raise AssessmentError({"message": msg})
+
+        r = requests.get(response)
+
+        if r.status_code != 200:
+            msg = "MOSS submission did not return an output."
+            raise AssessmentError({"message": msg})
+
+        html = r.text
+
+        # Convert hashes back to student names
+        for student, student_id in self.hashes.items():
+
+            student = "{} ({})".format(student, student_id)
+            html = re.sub(student_id, student, html)
+
+        # And write to file
+        f = open(filename, "w")
+
+        with f:
+            f.write(html)

@@ -1,3 +1,4 @@
+import argparse
 import sys
 import warnings
 
@@ -6,12 +7,26 @@ import yaml
 from .assessment import Assessment, AssessmentError
 from .checks import NameCheck, ValueCheck, CheckError
 
+
+#-------------------------------------------------------------------------------
+# Defining command-line arguments
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("path", help = "path to yaml config file")
+
+msg = "MOSS userid (e.g. 98xxxxxxx) for optional plagiarism detection"
+parser.add_argument("-m", "--moss", help = msg)
+
+
 #-------------------------------------------------------------------------------
 # Generating assessment from yaml input
 
 def matgrade():
 
-    filename = sys.argv[1]
+    args = parser.parse_args()
+
+    filename = args.path
 
     with open(filename) as f:
         content = f.read()
@@ -67,9 +82,15 @@ def matgrade():
         if "grade" in task:
             assessment.grade(task["checks"], task["grade"])
 
-    filename = filename.split(".")
-    filename = filename[0] + ".csv"
-    assessment.tabulate(filename)
+    assessment.tabulate("grades.csv")
 
-    if len(sys.argv) > 2:
-        assessment.check_plagiarism(sys.argv[2])
+    if args.moss:
+
+        try:
+            assessment.check_plagiarism(args.moss, "plagiarism_report.html")
+        except Exception as e:
+            details = e.args[0]
+            print(details["message"])
+            sys.exit()
+
+        
