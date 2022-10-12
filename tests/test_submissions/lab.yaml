@@ -4,10 +4,11 @@ submissions: submissions
 checks:
   
   shape:
-    sodium_shape: ["1.0", "[0.2, 0.8]"]
-    iron_shape: ["1.0", "0.2"]
+    hydrogen_shape: ["1", "[0.2, 0.8]"]
+    iron_shape: ["26", "0.2"]
 
   value:
+    hydrogen: [["1", "0.5"], 0.001]
     iron: [["26", "0.5"], 0.001]
     bonus: [["'Fe'", "0.5"], 0.001]
   
@@ -21,7 +22,7 @@ grade: 10
 
 ---
 
-checks: sodium_shape
+checks: hydrogen_shape
 grade: 10
 
 ---
@@ -32,7 +33,9 @@ grade: 10
 
 ---
 
-checks: iron 
+name: values
+checks: ["hydrogen", "iron"]
+combination: "and"
 grade: 10
 
 ---

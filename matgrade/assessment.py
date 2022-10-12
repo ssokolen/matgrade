@@ -1,3 +1,4 @@
+import functools
 import hashlib
 import matlab.engine
 import os
@@ -158,7 +159,8 @@ class Assessment:
 
         self.variables = {}
         self.checks = {}
-        self.grades = {}
+
+        self.graded_components = []
 
         self.engine = matlab.engine.start_matlab()
         call = "addpath('{}')".format(self.path)
@@ -173,7 +175,7 @@ class Assessment:
     #        self.variables[key] = kwargs[key]
 
 
-    #---------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Initializing assessment by adding checks
     #
 
@@ -208,7 +210,6 @@ class Assessment:
             arguments = ", ".join(arguments)
             raise AssessmentError({"message": msg.format(arguments)})
 
-
         # Add check and then update dictionary
         try:
             check = ValueCheck(arguments, solution, tolerance, self.engine)
@@ -223,40 +224,80 @@ class Assessment:
         self.checks[name] = ErrorCheck(arguments, self.engine)
 
 
-    #---------------------------------------------------------------------------
-    # Grade submissions using specified check
+    #--------------------------------------------------------------------------
+    # Add a graded element
 
-    def grade(self, check, grade):
+    def add_graded_component(self, name, checks, f, value):
 
-        self.grades[check] = {}
+        for check in checks:
+            if check not in self.checks:
+
+                msg = "\"{}\" check is undefined (referenced by \"{}\")"
+                raise AssessmentError({"message": msg.format(check, name)})
+
+        self.graded_components.append({
+            "name": name,
+            "checks": checks,
+            "f": f,
+            "value": value
+        })
+            
+    #--------------------------------------------------------------------------
+    # Generate results of all grades
+
+    def grade(self, filename):
+
+        # First, evaluate all checks
+        checks = []
+        
+        for d in self.graded_components:
+            checks.extend(d["checks"])
+
+        checks = set(checks)
+        results = {}
 
         for student, call in self.calls.items():
 
+            results[student] = {}
             code = self.submissions[student]
-            correct = self.checks[check].evaluate(student, call, code)
 
-            if correct:
-                self.grades[check][student] = grade
-            else:
-                self.grades[check][student] = 0
+            for check in checks:
 
-    #---------------------------------------------------------------------------
-    # Generate results of all grades
+                check_object = self.checks[check]
+                result = check_object.evaluate(student, call, code)
+                results[student][check] = result
 
-    def tabulate(self, filename):
+        # Then iterate over all grades and combine
+        grades = {}
+
+        for component in self.graded_components:
+
+            grade_results = {}
+
+            for student in results:
+
+                checks = component["checks"]
+                temp = [results[student][check] for check in checks]
+                result = functools.reduce(component["f"], temp)
+                if result:
+                    grade_results[student] = component["value"]
+                else:
+                    grade_results[student] = 0
+
+            grades[component["name"]] = grade_results
 
         # Converting grade content into lists
         students = self.submissions.keys()
 
         content = {"Student": students}
 
-        for check, grades in self.grades.items():
-            content[check] = [grades[s] for s in students]
+        for name, grades in grades.items():
+            content[name] = [grades[student] for student in students]
 
         d = pd.DataFrame(data = content)
         d.to_csv(filename, index = False)
 
-    #---------------------------------------------------------------------------
+    #--------------------------------------------------------------------------
     # Check plagiarism via moss
 
     def check_plagiarism(self, user_id, filename):

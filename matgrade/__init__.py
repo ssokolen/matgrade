@@ -8,7 +8,7 @@ from .assessment import Assessment, AssessmentError
 from .checks import NameCheck, ValueCheck, CheckError
 
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Defining command-line arguments
 
 parser = argparse.ArgumentParser()
@@ -19,7 +19,7 @@ msg = "MOSS userid (e.g. 98xxxxxxx) for optional plagiarism detection"
 parser.add_argument("-m", "--moss", help = msg)
 
 
-#-------------------------------------------------------------------------------
+#------------------------------------------------------------------------------
 # Generating assessment from yaml input
 
 def matgrade():
@@ -70,19 +70,50 @@ def matgrade():
                 check = error_checks[name]
                 assessment.add_error_check(name, check)
 
-    #-------------------------------------------------------------------------------
+
+    #--------------------------------------------------------------------------
     # Looping through the rest of documents and performing tasks
 
     for task in documents[1:]:
 
-        #if "check" in task:
-        #    
-        #    assessment.check(task["checks"])
-
         if "grade" in task:
-            assessment.grade(task["checks"], task["grade"])
 
-    assessment.tabulate("grades.csv")
+            if "checks" not in task:
+                print("Each grade task must define checks")
+                sys.exit()
+            elif not isinstance(task["checks"], list):
+                checks = [task["checks"]]
+            else:
+                checks = task["checks"]
+
+            if "combination" not in task:
+                task["combination"] = "or"
+                f = lambda a, b: a and b
+            elif task["combination"] == "or":
+                f = lambda a, b: a or b
+            elif task["combination"] == "and":
+                f = lambda a, b: a and b
+            else:
+                print("Grade task combination may only be \"and\"/\"or\"")
+                sys.exit()
+
+            if "name" not in task:
+                if task["combination"] == "or":
+                    name = " / ".join(checks)
+                elif task["combination"] == "and":
+                    name = " + ".join(checks)
+            else:
+                name = task["name"]
+
+            value = task["grade"]
+
+            assessment.add_graded_component(name, checks, f, value)
+
+
+    #--------------------------------------------------------------------------
+    # Generating output
+
+    assessment.grade("grades.csv")
 
     if args.moss:
 
