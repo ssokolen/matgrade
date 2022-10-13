@@ -45,6 +45,19 @@ def matgrade():
         print(details["message"])
         sys.exit()
 
+    # Adding variables 
+    if "variables" in documents[0]:
+        variables = documents[0]["variables"]
+
+        for name, call in variables.items():
+
+            try:
+                assessment.add_variable(name, call)
+            except Exception as e:
+                details = e.args[0]
+                print(details["message"])
+                sys.exit()
+
     # Adding checks
     if "checks" in documents[0]:
         checks = documents[0]["checks"]
@@ -54,21 +67,64 @@ def matgrade():
 
             for name in shape_checks:
                 check = shape_checks[name]
-                assessment.add_shape_check(name, check)
+                if len(check) > 1:
+                    n = check[1]
+                else:
+                    n = 1
 
-        if "value" in checks:
-            value_checks = checks["value"]
+                try:
+                    assessment.add_shape_check(name, check[0], n)
+                except Exception as e:
+                    details = e.args[0]
+                    print(details["message"])
+                    sys.exit()
+
+        if "absolute_value" in checks:
+            value_checks = checks["absolute_value"]
 
             for name in value_checks:
                 check = value_checks[name]
-                assessment.add_value_check(name, check[0], check[1])
+                if len(check) > 2:
+                    n = check[2]
+                else:
+                    n = 1
+
+                try:
+                    assessment.add_value_check(name, check[0], check[1], False, n)
+                except Exception as e:
+                    details = e.args[0]
+                    print(details["message"])
+                    sys.exit()
+
+        if "relative_value" in checks:
+            value_checks = checks["relative_value"]
+
+            for name in value_checks:
+                check = value_checks[name]
+                if len(check) > 2:
+                    n = check[2]
+                else:
+                    n = 1
+
+                try:
+                    assessment.add_value_check(name, check[0], check[1], True, n)
+                except Exception as e:
+                    details = e.args[0]
+                    print(details["message"])
+                    sys.exit()
 
         if "error" in checks:
             error_checks = checks["error"]
 
             for name in error_checks:
                 check = error_checks[name]
-                assessment.add_error_check(name, check)
+
+                try:
+                    assessment.add_error_check(name, check)
+                except Exception as e:
+                    details = e.args[0]
+                    print(details["message"])
+                    sys.exit()
 
 
     #--------------------------------------------------------------------------

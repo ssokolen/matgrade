@@ -1,17 +1,17 @@
 % Student: 8d0aa
 
-function t = decay_time(n,x)
+function z = plus_or_minus(x, y, op)
 
-    switch n
-        case {1 , 'H'}
-            k = 1.784e-9;
-        case {11 , 'Na'}
-            k = 2;
-        case {26 , 'Fe'}
-            k = 2;
-        otherwise
-            error('Error: Requested compound not listed')
-    end
-
-    t = -log(x)/k;
+switch op
+    case {'plus'}
+      z = x + y 
+    case {'minus'}
+      z = x - y
+    otherwise
+      error('Invalid operation')
 end
+
+z = z + 0.02
+
+end
+

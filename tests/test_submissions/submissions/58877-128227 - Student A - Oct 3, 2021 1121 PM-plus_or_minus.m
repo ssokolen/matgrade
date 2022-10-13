@@ -1,6 +1,6 @@
 % Early submission that should be ignored based on timestamp
 
-function t = decay_time(n,x)
+function z = plus_or_minus(x, y, op)
 
-    t = 0
+    z = 0
 end

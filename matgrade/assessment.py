@@ -157,9 +157,7 @@ class Assessment:
         with f:
             f.write(self.solution)
 
-        self.variables = {}
         self.checks = {}
-
         self.graded_components = []
 
         self.engine = matlab.engine.start_matlab()
@@ -169,50 +167,79 @@ class Assessment:
         # Initializing special name check (to perform filename comparisons)
         self.checks["name"] = NameCheck(self.functions, solution)
 
-    #def add_variables(self, **kwargs):
-    #
-    #    for key in kwargs.names():
-    #        self.variables[key] = kwargs[key]
+    #--------------------------------------------------------------------------
+    # Add MATLAB variables
+
+    def add_variable(self, name, call):
+    
+        try:
+            value = self.engine.eval(call)
+            self.engine.workspace[name] = value
+
+        except (matlab.engine.MatlabExecutionError, SyntaxError):
+
+            msg = "Defining variable \"{}\" with \"{}\" generated an error."
+            raise AssessmentError({"message": msg.format(name, call)})
+
+        except TimeoutError:
+
+            msg = "Defining variable \"{}\" with \"{}\" timed out."
+            raise AssessmentError({"message": msg.format(name, call)})
 
 
     #--------------------------------------------------------------------------
     # Initializing assessment by adding checks
-    #
 
-    def add_shape_check(self, name, arguments):
+    def add_shape_check(self, name, arguments, n):
 
         try:
             solution = run_matlab_function(
-                self.solution_call, arguments, self.engine
+                self.solution_call, arguments, n, self.engine
             )
-        except matlab.engine.MatlabExecutionError:
-            msg = "Running solution with ({}) generated an error."
-            arguments = ", ".join(arguments)
-            raise AssessmentError({"message": msg.format(arguments)})
 
+        except matlab.engine.MatlabExecutionError:
+            msg = "Running solution with ({}) and nargout={} generated an error."
+            arguments = ", ".join(arguments)
+            raise AssessmentError({"message": msg.format(arguments, n)})
+
+        except TimeoutError:
+
+            msg = "Running solution with ({}) and nargout={} timed out."
+            arguments = ", ".join(arguments)
+            raise AssessmentError({"message": msg.format(arguments, n)})
 
         # Add check and then update dictionary
         try:
-            check = ShapeCheck(arguments, solution, self.engine)
+            check = ShapeCheck(arguments, solution, n, self.engine)
         except CheckError as e:
             raise AssessmentError({"message": msg.format(e.args[0])})
 
         self.checks[name] = check
 
-    def add_value_check(self, name, arguments, tolerance):
+
+    def add_value_check(self, name, arguments, tolerance, relative, n):
 
         try:
             solution = run_matlab_function(
-                self.solution_call, arguments, self.engine
+                self.solution_call, arguments, n, self.engine
             )
+
         except matlab.engine.MatlabExecutionError:
-            msg = "Running solution with ({}) generated an error."
+            msg = "Running solution with ({}) and nargout={} generated an error."
             arguments = ", ".join(arguments)
-            raise AssessmentError({"message": msg.format(arguments)})
+            raise AssessmentError({"message": msg.format(arguments, n)})
+
+        except TimeoutError:
+
+            msg = "Running solution with ({}) and nargout={} timed out."
+            arguments = ", ".join(arguments)
+            raise AssessmentError({"message": msg.format(arguments, n)})
 
         # Add check and then update dictionary
         try:
-            check = ValueCheck(arguments, solution, tolerance, self.engine)
+            check = ValueCheck(
+                arguments, solution, tolerance, relative, n, self.engine
+            )
         except CheckError as e:
             raise AssessmentError({"message": msg.format(e.args[0])})
 
@@ -269,6 +296,7 @@ class Assessment:
 
         # Then iterate over all grades and combine
         grades = {}
+        grade_names = []
 
         for component in self.graded_components:
 
@@ -285,14 +313,28 @@ class Assessment:
                     grade_results[student] = 0
 
             grades[component["name"]] = grade_results
+            grade_names.append(component["name"])
+
+        # Summing up total grade
+        totals = {}
+
+        for student in results:
+
+            totals[student] = 0
+
+            for value in grades.values():
+                totals[student] += value[student]
+
+        grades["total"] = totals
+        grade_names.append("total")
 
         # Converting grade content into lists
         students = self.submissions.keys()
 
-        content = {"Student": students}
+        content = {"student": students}
 
-        for name, grades in grades.items():
-            content[name] = [grades[student] for student in students]
+        for name in grade_names:
+            content[name] = [grades[name][student] for student in students]
 
         d = pd.DataFrame(data = content)
         d.to_csv(filename, index = False)

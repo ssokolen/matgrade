@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import pytest
 from unittest.mock import patch
@@ -13,17 +14,21 @@ import matlab.engine
 from matgrade import matgrade
 
 # Generating grades
-@pytest.fixture
-@patch('sys.argv', ["matgrade", "lab.yaml"])
-def grades():
+@pytest.fixture(scope = 'session', autouse = True)
+@patch(
+    'argparse.ArgumentParser.parse_args',
+    return_value=argparse.Namespace(path = "lab.yaml", moss = None)
+)
+def grades(placeholder):
 
     # Doing work in test directory
     path = pathlib.Path(__file__).parent.resolve()
     os.chdir(path)
 
     matgrade()
-    d = pd.read_csv("lab.csv")
-    d.sort_values("Student", inplace = True, ignore_index=True)
+    d = pd.read_csv("grades.csv")
+    d.sort_values("student", inplace = True, ignore_index=True)
+    print()
     print(d)
     return d
 
@@ -36,23 +41,37 @@ def test_name(grades):
 
 def test_shape(grades):
     
-    assert grades["sodium_shape"][0] == 10
-    assert grades["sodium_shape"][1] == 0
-    assert grades["sodium_shape"][2] == 10
-    assert grades["sodium_shape"][3] == 10
+    assert grades["shape"][0] == 10
+    assert grades["shape"][1] == 0
+    assert grades["shape"][2] == 10
+    assert grades["shape"][3] == 10
 
 def test_value(grades):
 
-    assert grades["iron"][0] == 10
-    assert grades["iron"][1] == 10
-    assert grades["iron"][2] == 0
-    assert grades["iron"][3] == 10
+    assert grades["plus"][0] == 10
+    assert grades["plus"][1] == 10
+    assert grades["plus"][2] == 0
+    assert grades["plus"][3] == 10
+
+def test_or(grades):
+
+    assert grades["plus_or_minus"][0] == 10
+    assert grades["plus_or_minus"][1] == 10
+    assert grades["plus_or_minus"][2] == 10
+    assert grades["plus_or_minus"][3] == 10
+
+def test_and(grades):
+
+    assert grades["plus_and_minus"][0] == 10
+    assert grades["plus_and_minus"][1] == 0
+    assert grades["plus_and_minus"][2] == 0
+    assert grades["plus_and_minus"][3] == 10
 
 def test_error(grades):
     
-    assert grades["id_error"][0] == 10
-    assert grades["id_error"][1] == 0
-    assert grades["id_error"][2] == 10
-    assert grades["id_error"][3] == 10
+    assert grades["error"][0] == 10
+    assert grades["error"][1] == 0
+    assert grades["error"][2] == 10
+    assert grades["error"][3] == 10
 
 

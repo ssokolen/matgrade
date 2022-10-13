@@ -1,5 +1,5 @@
-Student,name,hydrogen_shape,iron_shape,values,id_error,bonus
-Student B,10,0,10,10,0,0
-Student C,10,10,10,0,10,0
-Student A,10,10,10,10,10,10
-Student D,0,10,10,10,10,10
+student,name,shape,shape2,plus,minus,minus2,plus_or_minus,plus_and_minus,error
+Student D,0,10,10,10,10,10,10,10,10
+Student B,10,0,0,10,0,0,10,0,0
+Student A,10,10,0,10,10,0,10,10,10
+Student C,10,10,0,0,10,0,10,0,10

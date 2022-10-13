@@ -23,17 +23,20 @@ class NameCheck:
 
 class ShapeCheck:
 
-    def __init__(self, arguments, solution, engine):
+    def __init__(self, arguments, solution, n, engine):
 
         self.arguments = arguments
         self.solution = solution
+        self.n = n
         self.engine = engine
 
     def evaluate(self, _student, call, _code):
 
         try:
-            value = run_matlab_function(call, self.arguments, self.engine)
-        except matlab.engine.MatlabExecutionError:
+            value = run_matlab_function(
+                call, self.arguments, self.n, self.engine,
+            )
+        except (matlab.engine.MatlabExecutionError, TimeoutError):
             return False
 
         # Either both value and solution have no size of rows/columns match
@@ -50,23 +53,31 @@ class ShapeCheck:
 
 class ValueCheck:
 
-    def __init__(self, arguments, solution, tolerance, engine):
+    def __init__(self, arguments, solution, tolerance, relative, n, engine):
 
         self.arguments = arguments
         self.solution = solution
         self.tolerance = tolerance
+        self.relative = relative
+        self.n = n
         self.engine = engine
 
     def evaluate(self, _student, call, _code):
 
         try:
-            value = run_matlab_function(call, self.arguments, self.engine)
-        except matlab.engine.MatlabExecutionError:
+            value = run_matlab_function(
+                call, self.arguments, self.n, self.engine
+            )
+        except (matlab.engine.MatlabExecutionError, TimeoutError):
             return False
 
         # Compare percent deviations
-        quotient = self.engine.rdivide(value, self.solution)
-        diff = self.engine.minus(quotient, 1.0)
+        diff = self.engine.minus(value, self.solution)
+
+        # If relative, divide this difference by the solution
+        if self.relative:
+            diff = self.engine.rdivide(diff, self.solution)
+
         diff = self.engine.abs(diff)
         diff = self.engine.max(diff)
 
@@ -84,7 +95,7 @@ class ErrorCheck:
     def evaluate(self, _student, call, code):
 
         try:
-            run_matlab_function(call, self.arguments, self.engine)
+            run_matlab_function(call, self.arguments, 1, self.engine)
         except matlab.engine.MatlabExecutionError as e:
 
             # Find error line
@@ -103,5 +114,9 @@ class ErrorCheck:
 
             if line in lines:
                 return True
-        
+
+        except TimeoutError:
+
+            return False
+
         return False

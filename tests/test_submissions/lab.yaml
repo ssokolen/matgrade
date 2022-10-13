@@ -1,19 +1,25 @@
-solution: decay_time.m
+solution: plus_or_minus.m
 submissions: submissions
+
+variables:
+
+  x: "[1, 1]"
 
 checks:
   
   shape:
-    hydrogen_shape: ["1", "[0.2, 0.8]"]
-    iron_shape: ["26", "0.2"]
+    shape: [["x", "x", "'plus'"]]
+    shape2: [["x", "x", "'both'"], 2]
 
-  value:
-    hydrogen: [["1", "0.5"], 0.001]
-    iron: [["26", "0.5"], 0.001]
-    bonus: [["'Fe'", "0.5"], 0.001]
+  absolute_value:
+    plus: [["200", "100", "'plus'"], 0.01]
+
+  relative_value:
+    minus: [["200", "100", "'minus'"], 0.01]
+    minus2: [["200", "100", "'both'"], 0.01, 2]
   
   error:
-    id_error: ["0.0", "0.0"]
+    error: ["1", "1", "'multiply'"]
 
 ---
 
@@ -22,28 +28,44 @@ grade: 10
 
 ---
 
-checks: hydrogen_shape
+checks: shape
 grade: 10
 
 ---
 
-checks: iron_shape
+checks: shape2
 grade: 10
-
 
 ---
 
-name: values
-checks: ["hydrogen", "iron"]
+checks: plus
+grade: 10
+
+---
+
+checks: minus 
+grade: 10
+
+---
+
+checks: minus2
+grade: 10
+
+---
+
+name: plus_or_minus
+checks: ["plus", "minus"]
+combination: "or"
+grade: 10
+
+---
+
+name: plus_and_minus
+checks: ["plus", "minus"]
 combination: "and"
 grade: 10
 
 ---
 
-checks: id_error
-grade: 10
-
----
-
-checks: bonus 
+checks: error
 grade: 10

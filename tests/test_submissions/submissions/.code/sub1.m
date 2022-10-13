@@ -1,17 +1,19 @@
 % Student: ceffc
 
-function t = decay_time(n,x)
+function z = plus_or_minus(x, y, op)
 
-    if n == 1
-        k = 1.784e-9;
-	t = -log(x)/k;
-    elseif n == 11
-        k = 1.288e-5;
-	t = -log(x)/k;
-    elseif n == 26
-        k = 1.803e-7;
-	t = -log(x)/k;
-    end
-
-    t = t(1)
+switch op
+    case {'plus'}
+      temp = x + y
+    case {'minus'}
+      while 1
+        temp = x - y
+      end
+    otherwise
+      disp('Invalid operation')
 end
+
+z = temp(1)
+
+end
+
